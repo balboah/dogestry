@@ -207,7 +207,7 @@ func (cli *DogestryCli) getLayerIdsToDownload(fromId remote.ID, imageRoot string
 			return err
 		}
 
-		_, err = client.InspectImage(string(id))
+		_, err = client.InspectImage(id.String())
 
 		if err == docker.ErrNoSuchImage {
 			toDownload = append(toDownload, id)
@@ -232,7 +232,7 @@ func (cli *DogestryCli) pullImage(fromId remote.ID, imageRoot string, r remote.R
 	}
 
 	for _, id := range toDownload {
-		downloadPath := filepath.Join(imageRoot, string(id))
+		downloadPath := filepath.Join(imageRoot, id.String())
 
 		fmt.Printf("Pulling image id '%s' to: %v\n", id.Short(), downloadPath)
 
@@ -264,7 +264,7 @@ func (cli *DogestryCli) createRepositoriesJsonFile(image, imageRoot string, r re
 
 	repositories := map[string]Repository{}
 	repositories[repoName] = Repository{}
-	repositories[repoName][repoTag] = string(id)
+	repositories[repoName][repoTag] = id.String()
 
 	return json.NewEncoder(reposFile).Encode(&repositories)
 }
@@ -403,7 +403,7 @@ func (cli *DogestryCli) downloadImages(r remote.Remote, downloadMap DownloadMap,
 	pullImagesErrMap := make(map[string]error)
 
 	for id, _ := range downloadMap {
-		downloadPath := filepath.Join(imageRoot, string(id))
+		downloadPath := filepath.Join(imageRoot, id.String())
 
 		fmt.Printf("Pulling image id '%s' to: %v\n", id.Short(), downloadPath)
 

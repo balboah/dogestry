@@ -31,8 +31,8 @@ type putFileResult struct {
 }
 
 type putConfig struct {
-	resultChan         chan putFileResult
-	putFilesChan       <-chan putFileTuple
+	resultChan   chan putFileResult
+	putFilesChan <-chan putFileTuple
 }
 
 func NewS3Remote(config config.Config) (*S3Remote, error) {
@@ -203,7 +203,7 @@ func (remote *S3Remote) Push(image, imageRoot string) error {
 }
 
 func (remote *S3Remote) PullImageId(id ID, dst string) error {
-	rootKey := "images/" + string(id)
+	rootKey := "images/" + id.String()
 	imageKeys, err := remote.repoKeys("/" + rootKey)
 	if err != nil {
 		return err
@@ -223,7 +223,7 @@ func (remote *S3Remote) ParseTag(repo, tag string) (ID, error) {
 		return "", err
 	}
 
-	return ID(file), nil
+	return NewID(string(file)), nil
 }
 
 func (remote *S3Remote) ResolveImageNameToId(image string) (ID, error) {
@@ -239,8 +239,8 @@ func (remote *S3Remote) ImageFullId(id ID) (ID, error) {
 	for key, _ := range remoteKeys {
 		key = strings.TrimPrefix(key, "images/")
 		parts := strings.Split(key, "/")
-		if strings.HasPrefix(parts[0], string(id)) {
-			return ID(parts[0]), nil
+		if strings.HasPrefix(parts[0], id.String()) {
+			return NewID(parts[0]), nil
 		}
 	}
 
@@ -545,7 +545,7 @@ func (remote *S3Remote) tagFilePath(repo, tag string) string {
 
 // path to an image dir
 func (remote *S3Remote) imagePath(id ID) string {
-	return filepath.Join("images", string(id))
+	return filepath.Join("images", id.String())
 }
 
 func (remote *S3Remote) remoteKey(key string) string {
@@ -553,7 +553,6 @@ func (remote *S3Remote) remoteKey(key string) string {
 }
 
 func (remote *S3Remote) List() (images []Image, err error) {
-
 	bucket := remote.getBucket()
 	nextMarker := ""
 

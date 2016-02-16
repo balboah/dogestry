@@ -89,7 +89,7 @@ func ResolveImageNameToId(remote Remote, image string) (ID, error) {
 	}
 
 	// ok, no repo, search the images:
-	fullId, err := remote.ImageFullId(ID(image))
+	fullId, err := remote.ImageFullId(NewID(image))
 	if err != nil {
 		return "", err
 	} else if fullId != "" {
@@ -134,5 +134,5 @@ func WalkImages(remote Remote, id ID, walker ImageWalkFn) error {
 		return err
 	}
 
-	return remote.WalkImages(ID(img.Parent), walker)
+	return remote.WalkImages(NewID(img.Parent), walker)
 }
