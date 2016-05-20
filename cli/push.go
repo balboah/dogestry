@@ -104,6 +104,7 @@ func (cli *DogestryCli) exportImageToFiles(image, root string, saveIds set) erro
 			parts := strings.Split(header.Name, "/")
 			idFromFile := remote.ID(parts[0])
 
+			fmt.Println(idFromFile, parts)
 			if _, ok := saveIds[idFromFile]; ok {
 				if err := cli.createFileFromTar(root, header, tarball); err != nil {
 					errch <- err
@@ -122,7 +123,9 @@ func (cli *DogestryCli) exportImageToFiles(image, root string, saveIds set) erro
 		errch <- nil
 	}()
 
-	if err := cli.Client.ExportImage(docker.ExportImageOptions{image, writer}); err != nil {
+	if err := cli.Client.ExportImage(docker.ExportImageOptions{
+		Name: image, OutputStream: writer,
+	}); err != nil {
 		return err
 	}
 
@@ -213,7 +216,12 @@ func (cli *DogestryCli) exportMetaDataToFiles(repoName string, repoTag string, i
 }
 
 func (cli *DogestryCli) exportToFiles(image string, r remote.Remote, imageRoot string) error {
-	imageHistory, err := cli.Client.ImageHistory(image)
+	inspect, err := cli.Client.InspectImage(image)
+	if err != nil {
+		return err
+	}
+	layers := inspect.RootFS.Layers
+	fmt.Println(layers)
 	if err != nil {
 		fmt.Printf("Error getting image history: %v\n", err)
 		return err
@@ -221,7 +229,7 @@ func (cli *DogestryCli) exportToFiles(image string, r remote.Remote, imageRoot s
 
 	fmt.Println("Checking layers on remote")
 
-	imageID := remote.ID(imageHistory[0].ID)
+	imageID := remote.ID(layers[0])
 	repoName, repoTag := remote.NormaliseImageName(image)
 
 	// Check the remote to see what layers are missing. Only missing Ids will
@@ -229,8 +237,8 @@ func (cli *DogestryCli) exportToFiles(image string, r remote.Remote, imageRoot s
 
 	missingIds := make(set)
 
-	for _, i := range imageHistory {
-		id := remote.ID(i.ID)
+	for _, l := range layers {
+		id := remote.ID(l)
 		_, err = r.ImageMetadata(id)
 		if err == nil {
 			fmt.Printf("  exists   : %v\n", id)
